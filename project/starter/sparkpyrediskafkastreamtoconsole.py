@@ -39,7 +39,8 @@ customerRiskSchema = StructType(
     ]
 )
 #TO-DO: create a spark application object
-spark = SparkSession.builder.appName("Customer-Risk").getOrCreate()
+spark = SparkSession.builder.config("spark.sql.streaming.forceDeleteTempCheckpointLocation","true")\
+    .appName("Customer-Risk").getOrCreate()
 #TO-DO: set the spark log level to WARN
 spark.sparkContext.setLogLevel("WARN")
 # TO-DO: using the spark application object, read a streaming dataframe from the Kafka topic redis-server as the source
@@ -47,7 +48,7 @@ spark.sparkContext.setLogLevel("WARN")
 kafkaRawStreamingDF = spark \
     .readStream \
     .format("kafka") \
-    .option("kafka.bootstrap.servers","localhost:9092") \
+    .option("kafka.bootstrap.servers","kafka:19092") \
     .option("subscribe","redis-server") \
     .option("startingOffsets","earliest") \
     .load()  
@@ -133,6 +134,7 @@ emailAndBirthYearStreamingDF = emailAndBirthDayStreamingDF.select(col('email'), 
 emailAndBirthYearStreamingDF.writeStream\
     .format("console") \
     .outputMode("append") \
+    .option("checkpointLocation", "/tmp/_checkpointrd") \
     .start() \
     .awaitTermination()
 # Run the python script by running the command from the terminal:
